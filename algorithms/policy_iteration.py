@@ -7,6 +7,7 @@ import numpy as np
 from environments import Environment
 from algorithms import Algorithm
 
+
 class PolicyIteration(Algorithm):
     def __init__(self, env: Environment, min_delta: float, gamma: float):
         super().__init__()
@@ -36,6 +37,16 @@ class PolicyIteration(Algorithm):
                 self.env.render_policy(self.policy)
                 break
 
+    def _compute_values(self, state):
+        return [self._compute_value(state, action) for action in self.env.get_actions()]
+
+    def _compute_value(self, state, action):
+        next_state, reward, terminal = self.env.simulate_step(state, action)
+        if terminal:
+            return reward
+        else:
+            return reward + self.gamma * self.value_function[next_state]
+
     def _policy_evaluation(self):
         """
         Updates the value function according to the current policy.
@@ -45,16 +56,10 @@ class PolicyIteration(Algorithm):
             delta = 0
 
             for s in self.states:
-                old_value = self.value_function[s]
-                new_value = 0
-                next_state, reward, terminal = self.env.simulate_step(s, self.policy[s])
-                if terminal:
-                    new_value = reward
-                else:
-                    new_value = reward + self.gamma * self.value_function[next_state]
+                old_value = deepcopy(self.value_function[s])
+                self.value_function[s] = self._compute_value(s, self.policy[s])
+                delta = np.max([delta, np.abs(old_value - self.value_function[s])])
 
-                self.value_function[s] = new_value
-                delta = np.max([delta, np.abs(old_value - new_value)])
             if delta < self.min_delta:
                 break
             else:
@@ -68,17 +73,8 @@ class PolicyIteration(Algorithm):
         policy_stable = True
         for s in self.states:
             old_action = deepcopy(self.policy[s])
-            possible_actions = self.env.get_actions()
-            values = []
-            for a in possible_actions:
-                next_state, reward, terminal = self.env.simulate_step(s, a)
-                if terminal:
-                    value = reward
-                else:
-                    value = reward + self.gamma * self.value_function[next_state]
-                values.append(value)
-            new_action = np.argmax(values)
-            self.policy[s] = new_action
-            if old_action != new_action:
+            values = self._compute_values(s)
+            self.policy[s] = np.argmax(values)
+            if old_action != self.policy[s]:
                 policy_stable = False
         return policy_stable

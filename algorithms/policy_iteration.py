@@ -1,4 +1,3 @@
-import logging
 import time
 from copy import deepcopy
 from typing import Dict, Tuple
@@ -6,12 +5,11 @@ from typing import Dict, Tuple
 import numpy as np
 
 from environments import Environment
+from algorithms import Algorithm
 
-LOGGER = logging.getLogger('PolicyIteration')
-
-
-class PolicyIteration:
+class PolicyIteration(Algorithm):
     def __init__(self, env: Environment, min_delta: float, gamma: float):
+        super().__init__()
         self.env = env
         self.min_delta = min_delta
         self.gamma = gamma
@@ -23,29 +21,26 @@ class PolicyIteration:
             self.value_function[s] = 0
             self.policy[s] = 0
 
-    def run(self):
-        start_time = time.time()
+    def _run(self):
         while True:
             self.iterations += 1
-            LOGGER.debug(f"Iteration {self.iterations}:")
+            self.logger.debug(f"Iteration {self.iterations}:")
             self._policy_evaluation()
             policy_stable = self._policy_improvement()
             if policy_stable:
-                LOGGER.debug(50 * "-")
-                LOGGER.debug("Value function:")
+                self.logger.debug(50 * "-")
+                self.logger.debug("Value function:")
                 self.env.render_value_function(self.value_function)
-                LOGGER.debug("")
-                LOGGER.debug("Policy:")
+                self.logger.debug("")
+                self.logger.debug("Policy:")
                 self.env.render_policy(self.policy)
                 break
-        end_time = time.time()
-        LOGGER.info(f'Took {int(end_time - start_time)} seconds to converge.')
 
     def _policy_evaluation(self):
         """
-        Updates the value_function according to the current policy.
+        Updates the value function according to the current policy.
         """
-        LOGGER.debug(f"\tPolicy evaluation.")
+        self.logger.debug(f"\tPolicy evaluation.")
         while True:
             delta = 0
 
@@ -63,13 +58,13 @@ class PolicyIteration:
             if delta < self.min_delta:
                 break
             else:
-                LOGGER.debug(f"\tMaximum value change: {round(delta, 3)}")
+                self.logger.debug(f"\tMaximum value change: {round(delta, 3)}")
 
     def _policy_improvement(self):
         """
-        Updates policy according to the current value_function.
+        Updates policy according to the current value function.
         """
-        LOGGER.debug(f"\tPolicy improvement.")
+        self.logger.debug(f"\tPolicy improvement.")
         policy_stable = True
         for s in self.states:
             old_action = deepcopy(self.policy[s])

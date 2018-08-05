@@ -1,4 +1,3 @@
-import logging
 import time
 from copy import deepcopy
 from typing import Dict, Tuple
@@ -8,13 +7,25 @@ import numpy as np
 from environments import Environment
 from algorithms.policy_iteration import PolicyIteration
 
-LOGGER = logging.getLogger("ValueIteration")
-
 
 class ValueIteration(PolicyIteration):
-    def run(self):
-        start_time = time.time()
-        LOGGER.debug(f"Value iteration:")
+    def _run(self):
+        self.logger.debug(f"Value iteration:")
+        
+        self._compute_value_function()
+        self._compute_policy()
+
+        self.logger.debug(50 * "-")
+        self.logger.debug("Value function:")
+        self.env.render_value_function(self.value_function)
+        self.logger.debug("")
+        self.logger.debug("Policy:")
+        self.env.render_policy(self.policy)
+
+    def _compute_value_function(self):
+        '''
+        Computes the value function for the optimal policy.
+        '''
         while True:
             delta = 0
 
@@ -36,8 +47,12 @@ class ValueIteration(PolicyIteration):
             if delta < self.min_delta:
                 break
             else:
-                LOGGER.debug(f"\tMaximum value change: {round(delta, 3)}")
+                self.logger.debug(f"\tMaximum value change: {round(delta, 3)}")
 
+    def _compute_policy(self):
+        '''
+        Computes the optimal policy from the value function.
+        '''
         for s in self.states:
             possible_actions = self.env.get_actions()
             values = []
@@ -49,11 +64,3 @@ class ValueIteration(PolicyIteration):
                     value = reward + self.gamma * self.value_function[next_state]
                 values.append(value)
             self.policy[s] = np.argmax(values)
-        LOGGER.debug(50 * "-")
-        LOGGER.debug("Value function:")
-        self.env.render_value_function(self.value_function)
-        LOGGER.debug("")
-        LOGGER.debug("Policy:")
-        self.env.render_policy(self.policy)
-        end_time = time.time()
-        LOGGER.info(f'Took {int(end_time - start_time)} seconds to converge.')

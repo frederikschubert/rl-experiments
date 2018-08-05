@@ -93,16 +93,16 @@ class GridWorld(Environment):
     def _get_next_location(self, action):
         old_location = deepcopy(self.state)
         if action == 0:
-            # up
+            # left
             new_location = (self.state[0], self.state[1] - 1)
         elif action == 1:
-            # right
+            # down
             new_location = (self.state[0] + 1, self.state[1])
         elif action == 2:
-            # down
+            # right
             new_location = (self.state[0], self.state[1] + 1)
         else:
-            # left
+            # up
             new_location = (self.state[0] - 1, self.state[1])
         if self._is_off_grid(new_location):
             new_location = old_location
